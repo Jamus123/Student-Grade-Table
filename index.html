@@ -1,0 +1,420 @@
+<!doctype html>
+<html>
+
+<head>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+    <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+    <script>
+    /*****************************
+     * Global Variables and Objects
+     *******************************/
+    var student_array = [];
+    var student_object = {
+        name: null,
+        course: null,
+        grade: null,
+    }
+    var color_count = 0;
+    var highest_grade_indeces = [0];
+    var lowest_grade_indeces = [0];
+    var current_students = null;
+    var nameReversed = false;
+    var courseReversed = false;
+    var gradeReversed = false;
+    var inputKeyTimer = null;
+
+
+    /***************************
+     *   Function definitions
+     *******************************/
+
+    /*************************************************
+     * add_student- creates student object and pushes onto student_array
+     * 
+     *************************************/
+    function add_student() {
+        if ($('#student_name').val() == '' || $('#student_course').val() == '' || $('#student_grade').val() == '') {
+            $('.alert').remove();
+            var checkInputAlert = $('<div>').addClass('alert alert-danger col-sm-12 col-md-12').text('Please fill out form completely.');
+            $('#student_input').append(checkInputAlert);
+            return;
+        }
+        if (parseFloat($('#student_grade').val()) >= 101 || parseFloat($('#student_grade').val()) <= -1) {
+            $('.alert').remove();
+            var invalidNumAlert = $('<div>').addClass('alert alert-danger col-sm-12 col-md-12').text('Please enter a number between 1-100.');
+            $('#student_input').append(invalidNumAlert);
+            return;
+        }
+        $('.alert').remove();
+        var addstudent = Object.create(student_object);
+        addstudent.name = $('#student_name').val();
+        addstudent.course = $('#student_course').val();
+        var isNum = /^\d+$/.test($('#student_grade').val());
+        console.log(isNum);
+        if (isNum) {
+            addstudent.grade = parseFloat($('#student_grade').val());
+        } else {
+            var nan_Alert = $('<div>').addClass('alert alert-danger col-sm-12 col-md-12').text('Please enter a number for student grade.');
+            $('#student_input').append(nan_Alert);
+            return;
+        }
+        student_array.push(addstudent);
+        sendStudent(addstudent);
+        $('input').val('');
+        list_students();
+    }
+
+    /*************************************************
+     * Function that lists the students using jquery to loop through students from the database
+     * and append them to the DOM
+     *  
+     *************************************/
+    function list_students() {
+        var background_color = '';
+        var color = '';
+
+        listed_students_array = student_array;
+
+        $('.student_list').empty();
+        for (var i = 0; i < student_array.length; i++) {
+
+            var student_info_container = $('<div>').addClass('student_information col-sm-12 well').css('background-color', background_color),
+            sname = $('<div>').addClass('sname col-sm-3').text(student_array[i].name),
+            scourse = $('<div>').addClass('scourse col-sm-3').text(student_array[i].course),
+            sgrade = $('<div>').addClass('sgrade col-sm-3').text(student_array[i].grade),
+            delete_button = $('<button>').attr('data_id', i).addClass('delete col-sm-2').text('Delete');
+            (function() {
+                var _this = delete_button;
+                _this.click(function() {
+                    student_array.splice($(_this).attr('data_id'), 1);
+                    $(_this).parent().remove();
+                    console.log("My data_id: ", $(_this).attr('data_id'));
+                    list_students();
+                    highlight_grade();
+                    calc_avg();
+                    high_low();
+
+                    console.log("After student delete: ", student_array);
+                });
+            })()
+            $(student_info_container).append(sname, scourse, sgrade, delete_button);
+            $('.student_list').append(student_info_container);
+            if (student_array.length > 1) {
+                calc_avg();
+                high_low();
+                highlight_grade();
+                console.log(student_array);
+            }
+            $('.new_students').empty();
+        }
+    }
+
+    /*************************************************
+     *
+     * Calculates the average of the student grade and displays at the top of the screen
+     *************************************/
+
+    function calc_avg() {
+        var avg = 0;
+        var sum = 0;
+        for (var i = 0; i < student_array.length; i++) {
+            sum += parseFloat(student_array[i].grade);
+        }
+        avg = sum / student_array.length;
+        avg = avg.toFixed(2);
+        $('#grade_average > span').html(avg);
+    }
+
+
+    /*************************************************
+     *
+     * Loop that finds the lowest and highest grade
+     *************************************/
+    function high_low() {
+        highest_grade_indeces = [0];
+        lowest_grade_indeces = [0];
+        var highest_grade = student_array[0].grade;
+        var lowest_grade = student_array[0].grade;
+        for (var i = 0; i < student_array.length; i++) {
+            //highest check
+            if (student_array[i].grade == highest_grade) {
+                highest_grade_indeces.push(i);
+            }
+            if (student_array[i].grade > highest_grade) {
+
+                highest_grade_indeces = [i];
+                highest_grade = student_array[i].grade;
+            }
+            if (student_array[i].grade == lowest_grade) {
+                lowest_grade_indeces.push(i);
+            }
+            //lowest check
+            if (student_array[i].grade < lowest_grade) {
+                lowest_grade_indeces = [i];
+                lowest_grade = student_array[i].grade;
+            }
+
+        }
+    }
+
+
+    /*************************************************
+     * Jquery function that relies on the high_low function in order to highlight the highest
+     * and lower grades in the table with bootstrap icons
+     * 
+     *************************************/
+    function highlight_grade() {
+
+        for (var i = 0; i < highest_grade_indeces.length; i++) {
+            $('.sgrade').eq(highest_grade_indeces[i]).addClass('highest_style glyphicon glyphicon-star');
+
+        }
+        for (var i = 0; i < lowest_grade_indeces.length; i++) {
+            $('.sgrade').eq(lowest_grade_indeces[i]).addClass('lowest_style glyphicon glyphicon-alert');
+        }
+    }
+
+
+     /*************************************************
+     *
+     * 
+     *************************************/
+
+    function getStudents() {
+
+        $.ajax({
+            dataType: 'json',
+            url: 'http://s-apis.learningfuze.com/sgt/get',
+            success: function(response) {
+                var diff = null;
+                result = response;
+
+                if (result.data.length > student_array.length) {
+                    diff = result.data.length - listed_students_array.length;
+                    $('.new_students').html(diff);
+                    student_array = [];
+
+                    student_array = student_array.concat(result.data);
+                    for (var i = 0; i < student_array.length; i++) {
+                        student_array[i].grade = parseFloat(student_array[i].grade);
+                    }
+
+                }
+            }
+        });
+    }
+
+     /*************************************************
+     *
+     * 
+     *************************************/
+    function sendStudent(student) {
+
+        var objData = {
+            name: student.name,
+            course: student.course,
+            grade: student.grade,
+
+        }
+
+        $.ajax({
+            url: 'http://s-apis.learningfuze.com/sgt/create/',
+            dataType: 'json',
+            data: objData,
+            method: 'POST',
+            cache: false,
+            crossDomain: true,
+            success: function(response) {
+
+                console.log(response);
+                $('.student_list').empty();
+                getStudents();
+
+            }
+        });
+    }
+
+     /*************************************************
+     *
+     * 
+     *************************************/
+    function mergeSort(students, sortfield) {
+        if (sortfield == 'name') {
+            if (nameReversed) {
+                return students.reverse();
+                nameReversed = false;
+            }
+        } else if (sortfield == 'course') {
+            if (courseReversed) {
+                return students.reverse();
+                courseReversed = false;
+            }
+        } else {
+            if (gradeReversed) {
+                return students.reverse();
+                gradeReversed = false;
+            }
+        }
+        if (students.length < 2)
+            return students;
+
+        var middle = parseInt(students.length / 2);
+        var left = students.slice(0, middle);
+        var right = students.slice(middle, students.length);
+
+        return merge(mergeSort(left, sortfield), mergeSort(right, sortfield), sortfield);
+
+
+    }
+
+     /*************************************************
+     *
+     * 
+     *************************************/
+    function merge(left, right, sortfield) {
+        var result = [];
+
+        while (left.length && right.length) {
+            if (left[0][sortfield] <= right[0][sortfield]) {
+                result.push(left.shift());
+            } else {
+                result.push(right.shift());
+            }
+        }
+
+        while (left.length)
+            result.push(left.shift());
+
+        while (right.length)
+            result.push(right.shift());
+
+        return result;
+    }
+
+    /*********************************
+     * FUNCTION - autoComplete
+     *       INPUT: input - the value from the course input field
+     *       DESCRIPTION: Takes in value from course input field and 
+     *                   creates li that are appended to the .auto-complete ul
+     *                  in order to make selections for auto-complete. list of JSON courses
+     *                  are retrieved using an AJAX call to the specified URL.
+     ***************/
+    function autoComplete(input) {
+
+        var myObj = {
+            course: input
+        }
+
+        $('.auto-complete').empty();
+        var getCourseArray = [];
+        var autoComArray = [];
+        $('.auto-complete').show();
+        $.ajax({
+            url: 'http://s-apis.learningfuze.com/sgt/courses',
+            data: myObj,
+            method: 'POST',
+            cache: false,
+            crossDomain: true,
+            dataType: 'json',
+            success: function(response) {
+                console.log(response);
+                getCourseArray = response.data;
+                console.log(getCourseArray.length);
+                for (var i = 0; i < getCourseArray.length; i++) {
+                    if (getCourseArray[i]['course'].indexOf(input) == 0) {
+                        autoComArray.push(getCourseArray[i]['course']);
+                    }
+                }
+                if (autoComArray.length > 10) {
+                    return;
+                }
+
+                for (var i = 0; i < autoComArray.length; i++) {
+                    var li = $('<li>').addClass('list-group-item').html(autoComArray[i]);
+                    $('.auto-complete').append(li);
+                }
+            }
+        });
+    }
+
+
+
+
+    /********************
+     * Program Execution
+     ********************/
+
+    $(document).ready(function() {
+        $('.auto-complete').hide();
+        getStudents();
+        list_students();
+        $('.add_student').click(add_student);
+        $('.update_student').click(list_students);
+        var refresher = setInterval("getStudents();", 5000);
+        $('.sort-name').click(function() {
+            student_array = mergeSort(student_array, 'name');
+            list_students();
+            nameReversed = true;
+        });
+        $('.sort-course').click(function() {
+            student_array = mergeSort(student_array, 'course');
+            list_students();
+            courseReversed = true;
+        });
+        $('.sort-grade').click(function() {
+            student_array = mergeSort(student_array, 'grade');
+            list_students();
+            gradeReversed = true;
+
+        });
+        $('#student_course').on('keyup', function() {
+            if (inputKeyTimer != null) {
+                clearInterval(inputKeyTimer);
+            }
+            var _this = $(this);
+            if ($(_this).val() == 0);
+            inputKeyTimer = setTimeout(function() {
+                autoComplete($(_this).val());
+            }, 150);
+        });
+        $('.auto-complete').on('click', '.list-group-item', function() {
+            var item = $(this).html()
+            console.log(item);
+            $('#student_course').val(item);
+            $('.auto-complete').hide();
+        });
+
+    });
+    </script>
+</head>
+
+<body>
+    <section id="student_info" class="col-sm-8">
+        <div class="student_container well col-sm-12">
+            <span class="col-sm-3">Student Name</span>
+            <span class="col-sm-3">Student Course</span>
+            <span class="col-sm-3">Student Grade</span>
+            <div id="grade_average" class="col-sm-3">Average: <span></span></div>
+        </div>
+        <div class="student_list col-sm-12"></div>
+    </section>
+    <section id="student_input" class="well col-sm-4 col-md-4">
+        <input type="text" class="input_info" name="student_name" id="student_name" placeholder="Student Name">
+        <input type="text" class="input_info" name="student_course" id="student_course" placeholder="Student Course">
+        <ul class="list-group auto-complete">
+        </ul>
+        <input type="text" class="input_info" name="student_grade" id="student_grade" placeholder="Student Grade (0-100)">
+        <h2>Grade Table Access</h2>
+        <button type="button" class="btn-primary add_student">Add Student <i class="glyphicon glyphicon-plus"></i></button>
+        <button type="button" class="btn-success update_student">New Students <i class="glyphicon glyphicon-user"> <span class="badge new_students"></span></i>
+        </button>
+        <h2>Student Sorting</h2>
+        <button type="button" class="btn-warning sort-name">Sort By Name <i class="glyphicon glyphicon-tags"></i></button>
+        <button type="button" class="btn-warning sort-course">Sort By Course <i class="glyphicon glyphicon-book"></i></button>
+        <button type="button" class="btn-warning sort-grade">Sort By Grade <i class="glyphicon glyphicon-stats"></i></button>
+    </section>
+</body>
+
+</html>

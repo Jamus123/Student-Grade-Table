@@ -1,0 +1,55 @@
+.input_info {
+    width: 100%
+}
+
+.delete {
+    border-radius: 10px;
+    color: black;
+    background: rgb(245, 245, 245);
+}
+
+button{
+    height: 35px;
+    border-style: none;
+    border-radius: 25px;
+}
+button:focus{
+    outline: 0;
+}
+.delete:focus {
+    display: none;
+}
+
+.alert {
+    margin-top: 5%;
+}
+
+.glyphicon {
+    font-size:
+}
+
+.student_list .well:nth-child(odd) {
+    background-color: #E5FFF6;
+    color: #4C997F;
+}
+
+.student_list .well:nth-child(even) {
+    background-color: #FAFAEE;
+    color: #B2A089;
+}
+
+.lowest_style {
+    color: red;
+     font-weight: bold;
+      font-size: 18px;
+}
+
+.highest_style {
+    color: gold;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.new_students{
+    background-color:red;
+}
